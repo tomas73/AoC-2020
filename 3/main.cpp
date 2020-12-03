@@ -21,10 +21,10 @@ int treesInSlope(vector<vector<char>> &vv, struct slope s, int modBase)
 
     yPosMax=vv.size();
 
-    for (yPos = 0; yPos < yPosMax; yPos=yPos + s.downInc) {
-        vector<char> v = vv[yPos];
-        char c = v[xPos % modBase];
-        xPos = xPos + s.rightInc;
+    for (yPos = 0; \
+         yPos < yPosMax; \
+         yPos=yPos + s.downInc, xPos = xPos + s.rightInc) {
+        char c = vv[yPos][xPos % modBase];
         if (c == '#') {numTrees++;}
     }
     cout << "numTrees = " << numTrees << endl;
