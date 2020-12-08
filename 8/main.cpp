@@ -14,21 +14,62 @@ enum inst {
     NOP
 };
 
+map<string,enum inst> imap {
+    {"acc", ACC },
+    {"jmp", JMP },
+    {"nop", NOP }
+};
+
 struct instruction {
     enum inst inst;
     int val;
 };
 
+struct state {
+    int pc;
+    int acc;
+};
+
+
+void stepInstruction(struct instruction i, struct state &s)
+{
+    switch (i.inst) {
+    case ACC:
+        s.acc += i.val;
+        s.pc++;
+        break;
+    case JMP:
+        s.pc += i.val;
+        break;
+    case NOP:
+        s.pc++;
+        break;
+    };
+}
+
+bool runProgram(vector<struct instruction> &v, set<int> &visitedRows)
+{
+    struct state s{0,0};
+
+    visitedRows.insert(s.pc);
+    while (1){
+        if (s.pc == v.size()) {
+            cout << "Normal Termination, ACC = " << s.acc << endl;
+            return true;
+        }
+        stepInstruction(v[s.pc], s);
+        if (visitedRows.find(s.pc) != visitedRows.end()) {
+            break;
+        }
+        visitedRows.insert(s.pc);
+    }
+    return false;
+}
 
 
 void task1(void)
 {
     ifstream in;
-    map<string,enum inst> imap;
-    imap["acc"] = ACC;
-    imap["jmp"] = JMP;
-    imap["nop"] = NOP;
-
     vector<struct instruction> v;
 
     in.open("input");
@@ -42,70 +83,24 @@ void task1(void)
             v.push_back(inst);
         }
     }
-    int accumulator = 0;
-    int pc = 0;
+    struct state s{0,0};
     set<int> visitedRows;
+
     while (1){
-        if (visitedRows.find(pc) != visitedRows.end()) {
+        if (visitedRows.find(s.pc) != visitedRows.end()) {
             break;
         }
-        visitedRows.insert(pc);
-        struct instruction i=v[pc];
-        switch (i.inst) {
-        case ACC:
-            accumulator += i.val;
-            pc++;
-            break;
-        case JMP:
-            pc += i.val;
-            break;
-        case NOP:
-            pc++;
-            break;
-        };
+        visitedRows.insert(s.pc);
+        stepInstruction(v[s.pc], s);
     }
-    cout << "ACC = " << accumulator << endl;
+    cout << "ACC = " << s.acc << endl;
 }
 
 
-bool runProgram(vector<struct instruction> &v, set<int> &visitedRows)
-{
-    int accumulator = 0;
-    int pc = 0;
-    visitedRows.insert(pc);
-    while (1){
-        if (pc == v.size()) {
-            cout << "ACC = " << accumulator << " Num visited = " << visitedRows.size() << endl; 
-            return true;
-        }
-        struct instruction i=v[pc];
-        switch (i.inst) {
-        case ACC:
-            accumulator += i.val;
-            pc++;
-            break;
-        case JMP:
-            pc += i.val;
-            break;
-        case NOP:
-            pc++;
-            break;
-        };
-        if (visitedRows.find(pc) != visitedRows.end()) {
-            break;
-        }
-        visitedRows.insert(pc);
-    }
-    return false;
-}
 
 void task2()
 {
     ifstream in;
-    map<string,enum inst> imap;
-    imap["acc"] = ACC;
-    imap["jmp"] = JMP;
-    imap["nop"] = NOP;
 
     vector<struct instruction> v;
 
@@ -122,7 +117,7 @@ void task2()
     }
     set<int> visitedRows;
     runProgram(v, visitedRows);
-    cout << "Num visited rows = " << visitedRows.size() << endl;
+
     // Modify each of the visited rows, one at a time
     int cnt = 0;
     for (auto it = visitedRows.begin(); it != visitedRows.end(); ++it) {
