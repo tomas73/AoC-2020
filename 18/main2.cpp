@@ -51,7 +51,6 @@ unsigned long long evalExpr(string exp)
     int pos = 0;
     int npos = 0;
 
-    cout << "Exp = " << exp;
     stringstream myExp;
     do {
         string element;
@@ -95,6 +94,8 @@ unsigned long long evalExpr(string exp)
      char op;
      unsigned long long v1,v2;
      for (;;) {
+         myExp.str("");
+         myExp << s;
          if (s.find('+') == string::npos) break;
          for(;;) {
              myExp >> v1;
@@ -103,18 +104,13 @@ unsigned long long evalExpr(string exp)
          }
          myExp >> v2;
          unsigned long long val = v1 + v2;
-         cout <<"EXP = " << v1 << " " << op << " " << v2 << " == " << val << endl;
          stringstream ss;
          ss << v1 << '+' << v2;
          size_t p = s.find(ss.str());
-         cout << "found " << ss.str() << " at pos " << p << " in " << s << endl;
          s.replace(p,ss.str().size(),to_string(val));
-         cout << "res " << s << endl;
      }
      //only * operators left
-     cout << "Final: " << s << endl;
      replace('*',' ',s);
-     cout << "Final: " << s << endl;
      stringstream ss;
      ss << s;
      unsigned long long acc = 1;
@@ -122,14 +118,13 @@ unsigned long long evalExpr(string exp)
      while (ss >> val) {
          acc = acc * val;
      }
-     cout << "acc = " << acc << endl;
      return (acc);
 }
 
 unsigned long long task1(void)
 {
     unsigned long long res = 0;
-    string input = "input3";
+    string input = "input";
     ifstream in;
     in.open(input);
     string line;
@@ -139,8 +134,6 @@ unsigned long long task1(void)
             int pos = 0;
             int npos = 0;
             res += evalExpr(line);
-
-            cout << "RES = " << evalExpr(line) << endl;;
         }
     }
     return res;
