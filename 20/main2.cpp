@@ -38,6 +38,10 @@ set<int> edgeTiles;
 set<int> cornerTiles;
 set<int> innerTiles;
 
+vector<vector<char>> puzzle;
+vector<vector<char>> image;
+
+set<pair<int,int>> monsterPattern;
 
 unsigned int inverse(unsigned int val)
 {
@@ -84,12 +88,9 @@ unsigned int stringToInt(string s)
 {
     unsigned int val = 0;
 
-    cout << "S: " << s << " ";
-
     for (int i = 0; i < s.size(); i++) {
         if (s[i] == '#') val |= (1 << i);
     }
-    cout << val << " " << inverse(val) << endl;
     return (val);
 }
 
@@ -116,7 +117,6 @@ void countEdges(vector<vector<char>> &vv, tile &t)
         s4.push_back(vv[i][9]);
     }
     t.right = stringToInt(s4);
-    cout << endl;
 }
 
 int numUnMatched(tile t1, tile t2)
@@ -167,7 +167,6 @@ bool edgeMatchesTile(unsigned int edge, tile t)
 void sortTiles(void)
 {
     for (auto it = tiles.begin(); it != tiles.end(); ++it) {
-        cout << "T: " << (*it).tileNumber << " " << (*it).up << " " << (*it).down << " " << (*it).left << " " << (*it).right << endl;
         int numMatches = 0;
         for (auto iti = tiles.begin(); iti != tiles.end(); ++iti) {
             if (it == iti) continue;
@@ -176,7 +175,6 @@ void sortTiles(void)
             if (edgeMatchesTile((*it).left, *iti)) numMatches++;
             if (edgeMatchesTile((*it).right, *iti)) numMatches++;
         }
-        cout << "NumMatches " << numMatches << endl;
         if (numMatches == 2) cornerTiles.insert((*it).tileNumber);
         if (numMatches == 3) edgeTiles.insert((*it).tileNumber);
         if (numMatches == 4) innerTiles.insert((*it).tileNumber);
@@ -216,10 +214,127 @@ vector<tile>::iterator findTileDown(tile t)
     return iti;
 }
 
-void printPuzzle(void)
+void flipPuzzle(vector<vector<char>> &p)
 {
-    
+    vector<vector<char>> tmp;
+    for (auto it = p.rbegin(); it != p.rend(); ++it) {
+        tmp.push_back(*it);
+    }
+    p=tmp;
 }
+
+void rotatePuzzle(vector<vector<char>> &p)
+{
+    vector<vector<char>> tmp;
+
+    int size = p.size();
+    for (int col = size; col > 0; col--) {
+        vector<char> v;
+        for (int row = 0; row < size; row++) {
+            v.push_back(p[row][col - 1]);
+        }
+        tmp.push_back(v);
+    }
+    p=tmp;
+}
+
+void printPuzzle(vector<vector<char>> &p)
+{
+    cout << endl;
+    cout << endl;
+    for ( auto it = p.begin(); it != p.end(); ++it) {
+        vector<char> v = *it;
+        for ( auto ita = v.begin(); ita != v.end(); ++ita) {
+            cout << *ita;
+        }
+        cout << endl;
+    }
+}
+
+
+void createPuzzle(void)
+{
+    // Create space 12*12 tiles a 10*10 pixles
+    for (int i = 0; i < 120; i++) {
+        vector<char> v;
+        for (int j = 0; j < 120; j++) {
+            v.push_back('.');
+        }
+        puzzle.push_back(v);
+    }
+
+    for ( auto it = tiles.begin(); it != tiles.end(); ++it) {
+        int row = (*it).row * 10;
+        int col = (*it).col * 10;
+        vector<vector<char>> vv = (*it).vv;
+        for (auto itr = vv.begin(); itr != vv.end(); ++itr) {
+            vector<char> v = *itr;
+            int c = col;
+            for (auto itc = v.begin(); itc != v.end(); ++itc) {
+                puzzle[row][c++] = *itc;
+            }
+            row++;
+        }
+    }
+}
+
+void createImage(void)
+{
+    // Create space 12*12 tiles a 8*8 pixles
+    for (int i = 0; i < 96; i++) {
+        vector<char> v;
+        for (int j = 0; j < 96; j++) {
+            v.push_back('.');
+        }
+        image.push_back(v);
+    }
+
+    for ( auto it = tiles.begin(); it != tiles.end(); ++it) {
+        int row = (*it).row * 8;
+        int col = (*it).col * 8;
+        vector<vector<char>> vv = (*it).vv;
+        int i = 0;
+        for (auto itr = vv.begin(); itr != vv.end(); ++itr) {
+            int x = i++;
+            if ((x == 0) || (x == 9)) continue;
+            vector<char> v = *itr;
+            int c = col;
+            int j = 0;
+            for (auto itc = v.begin(); itc != v.end(); ++itc) {
+                int z = j++;
+                if ((z== 0) || (z == 9)) continue;
+                image[row][c++] = *itc;
+            }
+            row++;
+        }
+    }
+}
+
+
+void createMonsterPattern(void)
+{
+    string input = "monster";
+    ifstream in;
+    in.open(input);
+    string line;
+    int row = 0;
+    if (in.is_open()) {
+        while (getline(in, line)) {
+            int col = 0;
+            for (auto it = line.begin(); it != line.end(); ++it) {
+                if (*it == '#') {
+                    pair<int,int> p;
+                    p.first=row;
+                    p.second=col;
+                    monsterPattern.insert(p);
+                }
+                col++;
+            }
+            row++;
+        }
+    }
+}
+
 
 void layPuzzle(void)
 {
@@ -228,9 +343,9 @@ void layPuzzle(void)
 
     auto it = find_if(tiles.begin(), tiles.end(), [ulTileNumber](const tile& obj) {return obj.tileNumber == ulTileNumber;});
 
-    cout << "Tile Number = " << (*it).tileNumber << endl;
     while(edgeMatchesAnyTile((*it).up, *it) || edgeMatchesAnyTile((*it).left, *it)) {
         rotate(*it);
+        rotatePuzzle((*it).vv);
     }
     (*it).row = 0;
     (*it).col = 0;
@@ -252,28 +367,92 @@ void layPuzzle(void)
                 for (;;) {
                     if ((*itc).left == rightEdge) break;
                     rotate(*itc);
-                    if ((*itc).numTurns == 0) flip(*itc);
+                    rotatePuzzle((*itc).vv);
+                    if ((*itc).numTurns == 0) {
+                        flip(*itc);
+                        flipPuzzle((*itc).vv);
+                    }
                 }
                 (*itc).row = row;
                 (*itc).col = col++;
-                cout << " Tile " << (*itc).tileNumber << " Rotate " << (*itc).numTurns << " FLipped " << (*itc).flipped << endl;
             }
         } while (itc != tiles.end());
         unsigned int downEdge = (*itr).down;
-        cout << "itr num " << (*itr).tileNumber << endl;
         itr = findTileDown(*itr);
         itc = itr;
         if (itr != tiles.end()) { // orient it
             for (;;) {
                 if ((*itr).up == downEdge) break;
                 rotate(*itr);
-                if ((*itr).numTurns == 0) flip(*itr);
+                rotatePuzzle((*itr).vv);
+                if ((*itr).numTurns == 0) {
+                    flip(*itr);
+                    flipPuzzle((*itr).vv);
+                }
             }
-            cout << "itr2 num " << (*itr).tileNumber << endl;
         }
         (*itc).row = ++row;
         (*itc).col = 0;
+        col = 1;
     } while (itr != tiles.end());
+}
+
+int numMonstersInImage(void)
+{
+    int numMonsters = 0;
+    int size = image.size();
+
+    // For each pixel in the image, apply the monsterpattern and see if it matches
+    // break if indexing outside image;
+
+    for (int row = 0; row < size; row ++) {
+        for (int col = 0; col < size; col ++) {
+            bool match = true;
+            for (auto it = monsterPattern.begin(); it != monsterPattern.end(); ++it) {
+                int r = row + (*it).first;
+                int c = col + (*it).second;
+                if ((r >= size) || (col >= size)) {
+                    match = false;
+                    break;
+                }
+                if (image[r][c] != '#') {
+                    match = false;
+                    break;
+                }
+            }
+            if (match == true) numMonsters++;
+        }
+    }
+    return numMonsters;
+}
+
+int scanForMonsters(void)
+{
+    int numMonsters = 0;
+
+    for (int i = 0; i < 2; i++) {
+        if (i == 1) flipPuzzle(image);
+        for (int j = 0; j < 4; j++) {
+            rotatePuzzle(image);
+            numMonsters = numMonstersInImage();
+            if (numMonsters > 0) return numMonsters;
+        }
+    }
+
+    return numMonsters;
+}
+
+int countHashes(void)
+{
+    int size = image.size();
+    int numHashes = 0;
+
+    for (int row = 0; row < size; row ++) {
+        for (int col = 0; col < size; col ++) {
+            if (image[row][col] == '#') numHashes++;
+        }
+    }
+    return numHashes;
 }
 
 unsigned long long task1(void)
@@ -306,9 +485,7 @@ unsigned long long task1(void)
                 getline(in,line);
                 for (auto it = line.begin(); it != line.end(); ++it) {
                     v.push_back(*it);
-                    cout << *it;
                 }
-                cout << endl;
                 vv.push_back(v);
             }
             countEdges(vv, t);
@@ -344,6 +521,30 @@ unsigned long long task1(void)
     // Ok start laying the puzzle;
     layPuzzle();
 
+    // The pieces are now correctly placed and orianted
+    createPuzzle();
+    printPuzzle(puzzle);
+
+    // Now over to the real task 2.
+    createImage();
+    printPuzzle(image);
+
+    // Create patternmatching for the monster
+    createMonsterPattern();
+    int numMonsterHashes = monsterPattern.size();
+    cout << "num monsmter pixles = " << numMonsterHashes << endl;
+
+    int numMonsters = scanForMonsters();
+    printPuzzle(image);
+    cout << "Num monsters " << numMonsters << endl;
+
+    int numHashes = countHashes();
+    cout << "Num Hashes : " << numHashes << endl;
+
+    int roughness = numHashes - numMonsterHashes * numMonsters;
+
+    cout << "Roughness = " << roughness << endl;
+    res = roughness;
     return res;
 }
 
