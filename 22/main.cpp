@@ -85,33 +85,27 @@ int playGame(int gameNo, vector<int> &p1, vector<int> &p2)
     int winner = 0;
     int ac,bc;
     string sa, sb;
-    set<string> hist;
-    
+    set<string> hist1, hist2;
     int cnt = 0;
     while (true) {
         cnt++;
-        cout << "Round " << cnt << endl;
-        printDeck(p1);
-        printDeck(p2);
-        // Check for infinite loop, are we repeating
-        // if game over, winner is player 1
+        // This was not very clear in the instructions, I had && and did not
+        // get the correct result
         sa=deckScore2(p1);
         sb=deckScore2(p2);
-        sa.append(sb);
-        if (hist.find(sa) != hist.end()) {
+        if ((hist1.find(sa) != hist1.end()) || (hist2.find(sb) != hist2.end())) {
             winner=1;
             cout << "LOOP! P1 wins " << gameNo << " " << cnt << " " << sa << endl;
             break;
         }
-        hist.insert(sa);
+        hist1.insert(sa);
+        hist2.insert(sb);
         //
         // Draw cards
         ac=p1.front();
         p1.erase(p1.begin());
         bc=p2.front();
         p2.erase(p2.begin());
-        cout << "Player 1 plays " << ac << endl;
-        cout << "Player 2 plays " << bc << endl;
 
         // Booth able to recurse? -> winner of round is determined by sub game
         if ((p1.size() >= ac) && (p2.size() >= bc)) {
